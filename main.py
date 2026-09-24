@@ -1,4 +1,5 @@
 import pandas as pd
+
 from utils.dataProvider import getDataPath
 
 eventsData = getDataPath("events.csv.gz")

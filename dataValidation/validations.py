@@ -1,6 +1,6 @@
 ## Validation Rules
 ratingValidations = [
-    "Rating vs Watching: We want to make sure that the rating happens AFTER the WATCHING to be relevent training data Initial data means there is not a single watch that completes without a rating -- in the future this might not be the case and we should register watch w/o rating as neutral if the movie finishes, and BAD if it doesn't"
+    "Rating vs Watching: We want to make sure that the rating happens AFTER the WATCHING to be relevent training data Initial data means there is not a single watch that completes without a rating -- in the future this might not be the case and we should register watch w/o rating as neutral if the movie finishes, and BAD if it doesn't",
 ]
 
 ## Data Types and Shapes
@@ -14,7 +14,7 @@ eventDataShape = {
     "movie_id": {
         "dtype": "object",
         "description": "A combination of lowercase title and year seperated by +, e.g.: twelve+monkeys+1995",
-        "nullable": True,
+        "nullable_when": {"event_type": "account_created"},
     },
     "rating": {
         "dtype": "object",
@@ -59,14 +59,16 @@ movieDataShape = {
     "movie_id": {
         "dtype": "object",
         "description": "A combination of lowercase title and year seperated by +, e.g.: twelve+monkeys+1995",
-        "nullable": True,
     },
     "title": {"dtype": "object"},
     "genres": {
         "dtype": "object",
         "description": "genres are represented as upper-case first letter and split by |. E.g.,: Drama|Romance or Western|Action|Adventure",
     },
-    "release_date": {"dtype": "object"},
+    "release_date": {
+        "dtype": "object",
+        "description": "release date is represented as year-month-day, e.g. 1996-03-15",
+    },
     "runtime": {"dtype": "int64"},
     "origional_language": {"dtype": "object"},
     "overview": {"dtype": "object"},
