@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 import tensorflow as tf
 
@@ -48,7 +50,7 @@ movieIndex = movieLookup(movieInput)
 userVector = userEmbeddings(userIndex)
 movieVector = movieEmbeddings(movieIndex)
 
-interaction = tf.keras.layers.Dot(axes=1, name="interaction")[userVector, movieVector]
+interaction = tf.keras.layers.Dot(axes=1, name="interaction")([userVector, movieVector])
 
 ## account for user biases
 userBiasesLayer = tf.keras.layers.Embedding(
@@ -84,9 +86,25 @@ model = tf.keras.Model(
     name="collaborative_filter_v1",
 )
 
-## feature extraction
+## preparing dataset for model
 features = {
     "user_id": tf.constant(trainingRatings["user_id"].tolist()),
     "movie_id": tf.constant(trainingRatings["movie_id"].tolist()),
 }
 labels = tf.constant(trainingRatings["rating"].to_numpy().reshape(-1, 1))
+
+trainDataset = tf.data.Dataset.from_tensor_slices((features, labels))
+trainDataset = trainDataset.shuffle(len(trainingRatings), seed=12345).batch(128)
+
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+    loss=tf.keras.losses.MeanSquaredError(),
+    metrics=[tf.keras.metrics.RootMeanSquaredError(name="rmse")],
+)
+
+## train the model
+history = model.fit(trainDataset, epochs=10)
+
+## save the model
+Path("models").mkdir(exist_ok=True)
+model.save("models/collaborative_filter_v1_ADAM_8020Split.keras")
