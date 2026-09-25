@@ -1,7 +1,6 @@
 import pandas as pd
 
 from utils.dataProvider import getDataPath
-from utils.dataSplitter import splitDataForML
 
 eventsData = getDataPath("events.csv.gz")
 moviesData = getDataPath("movies.csv.gz")
@@ -11,19 +10,25 @@ events = pd.read_csv(eventsData)
 movies = pd.read_csv(moviesData)
 users = pd.read_csv(usersData)
 
-trainData, testData = splitDataForML(events, 0.8)
+print("EVENTS")
+print(events.shape)
+print(events.columns)
+print(events.dtypes)
+print(events.head())
+print(events.info())
 
-badSplits = []
+print("\nUSERS")
+print(users.shape)
+print(users.columns)
+print(users.dtypes)
+print(users.head())
+print(users.info())
 
-for userID in testData["user_id"].unique():
-    userTrain = trainData.loc[trainData["user_id"] == userID]
-
-    userTest = testData.loc[testData["user_id"] == userID]
-
-    latestTrain = userTrain["timestamp"].max()
-    earliestTest = userTest["timestamp"].min()
-
-    if latestTrain > earliestTest:
-        badSplits.append(userID)
-
-print("Users with bad chronological splits:", len(badSplits))
+print("\nMOVIES")
+print(movies.shape)
+print(movies.columns)
+print(movies.dtypes)
+genres = movies["genres"].dropna().str.split("|").explode().unique()
+print(sorted(genres))
+print(movies.head())
+print(movies.info())
