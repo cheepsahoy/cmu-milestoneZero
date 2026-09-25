@@ -14,7 +14,7 @@ trainingRatings["user_id"] = trainingRatings["user_id"].astype(str)
 trainingRatings["movie_id"] = trainingRatings["movie_id"].astype(str)
 trainingRatings["rating"] = trainingRatings["rating"].astype("float32")
 
-## feature extraction
+## grab unique users and movies
 uniqueUsers = trainingRatings["user_id"].unique()
 uniqueMovies = trainingRatings["movie_id"].unique()
 
@@ -39,22 +39,54 @@ movieEmbeddings = tf.keras.layers.Embedding(
     output_dim=embeddingSize,
 )
 
+## build input
+userInput = tf.keras.Input(shape=(), dtype=tf.string, name="user_id")
+movieInput = tf.keras.Input(shape=(), dtype=tf.string, name="movie_id")
 
-sampleUser = tf.constant(["42"])
-sampleMovie = tf.constant(["10+things+i+hate+about+you+1999"])
-
-userIndex = userLookup(sampleUser)
-movieIndex = movieLookup(sampleMovie)
-
+userIndex = userLookup(userInput)
+movieIndex = movieLookup(movieInput)
 userVector = userEmbeddings(userIndex)
 movieVector = movieEmbeddings(movieIndex)
 
-interaction = tf.reduce_sum(
-    userVector * movieVector,
-    axis=1,
+interaction = tf.keras.layers.Dot(axes=1, name="interaction")[userVector, movieVector]
+
+## account for user biases
+userBiasesLayer = tf.keras.layers.Embedding(
+    input_dim=len(userLookup.get_vocabulary()),
+    output_dim=1,
+    name="user_bias",
 )
 
-print(userLookup)
-print(userVector)
-print(movieVector)
-print(interaction)
+movieBiasesLayer = tf.keras.layers.Embedding(
+    input_dim=len(movieLookup.get_vocabulary()),
+    output_dim=1,
+    name="movie_bias",
+)
+userBias = userBiasesLayer(userIndex)
+movieBias = movieBiasesLayer(movieIndex)
+
+## construct model
+combined = tf.keras.layers.Add()([interaction, userBias, movieBias])
+meanRating = float(trainingRatings["rating"].mean())
+
+prediction = tf.keras.layers.Rescaling(
+    scale=1.0,
+    offset=meanRating,
+    name="predicted_rating",
+)(combined)
+
+model = tf.keras.Model(
+    inputs={
+        "user_id": userInput,
+        "movie_id": movieInput,
+    },
+    outputs=prediction,
+    name="collaborative_filter_v1",
+)
+
+## feature extraction
+features = {
+    "user_id": tf.constant(trainingRatings["user_id"].tolist()),
+    "movie_id": tf.constant(trainingRatings["movie_id"].tolist()),
+}
+labels = tf.constant(trainingRatings["rating"].to_numpy().reshape(-1, 1))
