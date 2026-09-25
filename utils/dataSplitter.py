@@ -4,10 +4,19 @@ import pandas as pd
 def splitDataForML(
     events: pd.DataFrame, splitPercent: float
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Split rating events chronologically for each user. To be used with same splitPercent for testing+training a dataset
+    Args:
+        events: events dataFrame
+        splitPercent: floating value between 0 and 1, non-inclusive
+    Returns:
+        trainData: Earlier ratings used for training.
+        testData: Later ratings used for evaluation.
+    """
     if splitPercent <= 0 or splitPercent >= 1:
         raise ValueError("splitPercent must be between (0, 1) exclusive")
 
-    ## in the current dataset, # of events["event_type"].value_counts() yields equivlent # of ratings and watchthis logic will likely need to be edited later
+    ## in the current dataset, # of events["event_type"].value_counts() yields equivlent # of ratings and watch events, this logic will likely need to be edited later
     ratings = events.loc[events["event_type"] == "rating"].copy()
 
     ratings["timestamp"] = pd.to_datetime(ratings["timestamp"])

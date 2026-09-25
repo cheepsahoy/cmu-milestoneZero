@@ -1,18 +1,29 @@
 import pandas as pd
 
 from utils.dataProvider import getDataPath
+from utils.dataSplitter import splitDataForML
 
 eventsData = getDataPath("events.csv.gz")
+moviesData = getDataPath("movies.csv.gz")
+usersData = getDataPath("users.csv.gz")
+
 events = pd.read_csv(eventsData)
+movies = pd.read_csv(moviesData)
+users = pd.read_csv(usersData)
 
-watches = events.loc[events["event_type"] == "watch"]
-ratings = events.loc[events["event_type"] == "rating"]
+trainData, testData = splitDataForML(events, 0.8)
 
-ratedPairs = ratings[["user_id", "movie_id"]].drop_duplicates()
+badSplits = []
 
-watchedNotRated = watches.merge(
-    ratedPairs, on=["user_id", "movie_id"], how="left", indicator=True
-)
+for userID in testData["user_id"].unique():
+    userTrain = trainData.loc[trainData["user_id"] == userID]
 
-watchedNotRated = watchedNotRated.loc[watchedNotRated["_merge"] == "left_only"]
-print(watchedNotRated)
+    userTest = testData.loc[testData["user_id"] == userID]
+
+    latestTrain = userTrain["timestamp"].max()
+    earliestTest = userTest["timestamp"].min()
+
+    if latestTrain > earliestTest:
+        badSplits.append(userID)
+
+print("Users with bad chronological splits:", len(badSplits))
