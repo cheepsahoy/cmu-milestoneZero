@@ -16,7 +16,7 @@ suppliedModel = tf.keras.models.load_model(
 )
 
 
-def modelPredict(userID: int, numberOfMovies: int) -> list[pd.DataFrame]:
+def modelPredict(userID: int, numberOfMovies: int) -> pd.DataFrame:
     """
     Desc: This function uses the supplied model suggest the top numberOfMovies ranked by the models prediction.
 
@@ -24,17 +24,36 @@ def modelPredict(userID: int, numberOfMovies: int) -> list[pd.DataFrame]:
         userID: the userID we are making suggestions to
         numberOfMovies: integer, supplies a number of movies
     Returns:
-        List: of pd.DataFrames from the movies dataset.
+        pd.DataFrames from the movies dataset.
     """
     if userID not in users["user_id"].values:
         raise ValueError(f"Error: {userID} is not valid")
 
+    if numberOfMovies <= 0:
+        raise ValueError("Error: numberOfMovies must be positive")
     ## exclude movies the user has already seen
-    seenMoves = set(events.loc(events["user_id"] == userID), "move_id")
+    userEvents = events.loc[
+        (events["user_id"] == userID) & (events["event_type"].isin(["watch", "rating"]))
+    ]
+    seenSet = set(userEvents["movie_id"].dropna())
 
-    ## get 100+numberOfMovies most popular movies as candidates and grab their movie_ids
+    unseenMovies = movies.loc[~movies["movie_id"].isin(seenSet)]
     popularMovieCount = 100 + numberOfMovies
+    ## get 100+numberOfMovies most popular movies as candidates and grab their movie_ids. Note, this is a design decision to improve the weakness of the current model but it has a cost (e.g., what if our selected user really likes to watch only obscure movies? This approach will not serve them and thus this decision should be rejected under a condition of more confidence in the model)
+    candidateMovies = unseenMovies.nlargest(popularMovieCount, "popularity").copy()
 
-    ## run model on those movies
+    ## establish inputs preperation
+    candidateInputs = candidateMovies[["movie_id"]].copy()
+    candidateInputs["user_id"] = str(userID)
 
-    ## return numberOfMovies as movies pd.Dataframe
+    modelInputs = {
+        "user_id": candidateInputs["user_id"].to_numpy(),
+        "movie_id": candidateInputs["movie_id"].to_numpy(),
+    }
+
+    ## run model predictions, rank and return
+    predict = suppliedModel.predict(modelInputs, verbose=0)
+
+    candidateMovies["predicted_rating"] = predict.flatten()
+
+    return candidateMovies.nlargest(numberOfMovies, "predicted_rating")

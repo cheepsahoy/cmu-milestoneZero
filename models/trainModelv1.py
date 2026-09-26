@@ -107,4 +107,4 @@ history = model.fit(trainDataset, epochs=10)
 
 ## save the model
 Path("models").mkdir(exist_ok=True)
-model.save("collaborative_filter_v1_ADAM_8020Split.keras")
+model.save("models/collaborative_filter_v1_ADAM_8020Split.keras")
