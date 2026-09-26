@@ -3,8 +3,9 @@
 Movie recommendation algorithm for CMU ML project.
 
 ## Running the Project
-Point of entry is `main.py`. You should use the provided `reccomendMetaFunction` and supply a `userID` of your choice and an intger `numberOfMovies`. The function will a pd.Dataset from the `movies.csv` file.
+Fastest way to run is to edit `quickRun.py` and just add a `userID` of your choice, along with an integer `numberOfMovies`. It will return a pd.Dataset from the `movies.csv` file.
 
+Core function located in `main.py`. You should use the provided `reccomendMetaFunction`.
 
 ## Setting Up Your Own Environment!
 Running is pretty straightforward, two things you need to take care of: Data, and API Tokens.

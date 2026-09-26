@@ -1,5 +1,6 @@
 import pandas as pd
-from dataProvider import getDataPath
+
+from utils.dataProvider import getDataPath
 
 
 def checkIfNewUser(userID: int) -> bool:
