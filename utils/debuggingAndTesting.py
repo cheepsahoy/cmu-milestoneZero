@@ -14,13 +14,15 @@ events = pd.read_csv(eventsData)
 movies = pd.read_csv(moviesData)
 users = pd.read_csv(usersData)
 
+smithMovie = movies.loc[movies["movie_id"] == "mr.++mrs.+smith+2005"]
+print(smithMovie["genres"])
 # registeredUsers = set(events.loc[events["event_type"] == "account_created", "user_id"])
 # activeUsers = set(events.loc[events["event_type"].isin(["watch", "rating"]), "user_id"])
 # coldStartUsers = registeredUsers - activeUsers
 # coldStartProfiles = users.loc[users["user_id"].isin(coldStartUsers)]
 # print(coldStartProfiles)
 # 1067
-testLLMCall = asyncio.run(reccomendMetaFunction(1067, 10))
+testLLMCall = asyncio.run(reccomendMetaFunction(1, 10))
 print(testLLMCall)
 ## print(modelPredict(1, 20))
 

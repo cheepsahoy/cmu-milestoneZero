@@ -1,0 +1,20 @@
+## Learning
+The model, found in `models/trainModelv1.py`, employs a variant of collaborative filtering that uses the history of user/movie_rating pairs to learn and predict user preferences. The model is built on a Tensorflow and uses 32 dimension embedding for both users and movies. The model combines a dot product score (user embedding * movie embedding) with user biases (does this user score movies consistently higher/lower than others?) and movie bias (is this movie scored consistently higher/lower than usual?) to produce a predictive rating. 
+
+I chose collaborative filtering for two reasons. First, I thought effective content filtering would require more information than  the existing dataset could supply, and I am still a little unsure how one might go about deciding the relevent features to render movies "similar" (genre comes to mind, of course, but genres themselves are quite broad). Second, I thought collaborative filtering would fit well by learning preferences from the aggregate of user interactions.
+
+Training data from the model came from `events` and employed chronological splitting to ensure that the training data came before the test data. Once sorted, the data was split `80/20`, although subsequent iterations could use the provided `splitDataForML` function in `utils/dataSplitter.py` to arrive at a different split.
+
+The models output is a regression model that tries to predict how the user will rate the movie. For the purpose of testing, I assumed 7.5 <=  means that a user liked a movie, and 7.5 > means a user didn't like a movie. Testing the model yielded: Recall: 41.21%. FNR: 58.79%, Precision: 77.80%, FPR: 14.31%. What's this mean? Basically the model is more likely to reject a movie you like than reccomend one you don't. For a movie service I think this is preferable (since bad experiences cause disengagement, but positive experiences mean people keep coming back). I tested the model against a baseline (a greedy approach that just use the movie's average vote to see if its reccomended, same 7.5 threshold). The results of the baseline were: Recall: 45.86% FNR: 54.14%. Precision: 69.72%. FPR: 24.24%. So, our model basically became slightly more discriminating (in a positive way!) and was more likely to reccomend movies the user would want to watch (by rejecting movies they wouldn't like to watch). Overall this is a success!
+
+To solve the coldstart problem, I employed instructor (a schema-forward interface for LLM's) along with chatGPT to read the new user's likes and dislikes. The coldStart path of the reccomendation algorithm extracts all the genres that exist in our movie dataset, feeds the user's profile (stated likes and dislikes) to an LLM, and asks an LLM to sort that brief biography into buckets to determine genres that the user likes/dislikes. Then, movies are scored by a simple adding mechanism (for multi-genre works, it gains +1 for each genre it has that the user likes, and -1 for each one they dislike). Within scores, movies are sorted by popularity and offered to the user. Code can be found in `coldStart.py`.
+
+## Running Both the ML Model and the LLM Cold-Start Approach
+Instructions can be found in `README.md`.
+
+## Running / Inspecting the ML Model
+The fastest way to run the ML model is to use the provided `modelPredict` function located in `modelPrediction.py`. Provide a `userID` and a desired `numberOfMovies` you want reccomendations for.
+
+The most-current keras layer from the model using by the model can be found in `models/` as `collaborative_filter_v1_ADAM_8020Split.keras`. 
+
+If you want to train your own version of the model,  use `trainModelv1.py` in `models/` as a template, just change the `model.save` output title. Some other variants worth investigating might be to attempt different train/test splits, alterantive optimizers, or implement a hybrid collaborative-content learning approach. If you change the model, edit the `suppliedModel` variable for `modelPrediction.py`

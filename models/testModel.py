@@ -32,6 +32,61 @@ model = tf.keras.models.load_model(
 results = model.evaluate(testDataset, return_dict=True)
 print(results)
 
+## Calculating predictions
+predictions = model.predict(testFeatures, verbose=0).flatten()
+
+## 7.5 seems fine to calculate like or not?
+threshold = 7.5
+
+actual = testRatings["rating"].to_numpy() >= threshold
+predicted = predictions >= threshold
+
+## Calculate confusion matrix values
+TP = (actual & predicted).sum()
+TN = (~actual & ~predicted).sum()
+FP = (~actual & predicted).sum()
+FN = (actual & ~predicted).sum()
+
+print(f"TP: {TP}, TN: {TN}, FP: {FP}, FN: {FN}")
+
+## Calculate metrics
+recall = TP / (TP + FN)
+fnr = FN / (TP + FN)
+precision = TP / (TP + FP)
+fpr = FP / (FP + TN)
+
+print(f"Recall:    {recall:.2%}")
+print(f"FNR:       {fnr:.2%}")
+print(f"Precision: {precision:.2%}")
+print(f"FPR:       {fpr:.2%}")
+
+# compare against a baseline, assume we use average moving rating
+moviesData = getDataPath("movies.csv.gz")
+movies = pd.read_csv(moviesData)
+
+comparison = testRatings.merge(
+    movies[["movie_id", "vote_average"]], on="movie_id", how="left"
+)
+
+actualBaseline = comparison["rating"] >= threshold
+predictedBaseline = comparison["vote_average"] >= threshold
+
+TP = (actualBaseline & predictedBaseline).sum()
+TN = (~actualBaseline & ~predictedBaseline).sum()
+FP = (~actualBaseline & predictedBaseline).sum()
+FN = (actualBaseline & ~predictedBaseline).sum()
+
+print("Compared to Baseline:")
+recall = TP / (TP + FN)
+fnr = FN / (TP + FN)
+precision = TP / (TP + FP)
+fpr = FP / (FP + TN)
+
+print(f"Recall:    {recall:.2%}")
+print(f"FNR:       {fnr:.2%}")
+print(f"Precision: {precision:.2%}")
+print(f"FPR:       {fpr:.2%}")
+"""
 ## Compare against baseline
 meanRating = dummyTrainData["rating"].mean()
 
@@ -68,3 +123,4 @@ sample["predicted_rating"] = predictions.flatten()
 sample["absolute_error"] = (sample["rating"] - sample["predicted_rating"]).abs()
 
 print(sample.round(2).to_string(index=False))
+"""
